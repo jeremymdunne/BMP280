@@ -9,33 +9,37 @@ float baselinePressure = 0;
 float determineBaselinePressure(){
   //try to smooth out the pressure altitude readings
   //first get some bogus numbers, try to 'wake up' the sensor
-  for(int i = 0; i < 5; i ++){
-    bmp.getTemperature();
-    bmp.getPressure();
-    delay(10);
+  float pressure, temperature;
+  for(int i = 0; i < 10; i ++){
+    bmp.readSensor(&temperature, &pressure);
+    delay(20);
   }
   //now start running tally of pressure
   //assume no significant changes in temperature
-  float pressureBaseline = bmp.getPressure();
+  float pressureBaseline = pressure;
   for(int i = 0; i < 50; i ++){
-    pressureBaseline += bmp.getPressure();
+    bmp.readSensor(&temperature, &pressure);
+    pressureBaseline += pressure;
+    Serial.println(pressure);
     pressureBaseline /= 2.0;
-    delay(10);
+    delay(20);
   }
   //return results
   return pressureBaseline;
 }
 
+
+float estimate_altitude(float cur_pressure, float baseline_pressure){
+  float altitude; // in Si units for Pascal
+  baseline_pressure /= 100;
+  cur_pressure /= 100;
+  altitude = 44330 * (1.0 - pow(cur_pressure / baseline_pressure, 0.1903));
+  return altitude;
+}
+
 void setup() {
     // put your setup code here, to run once:
-    Serial.begin(9600);
-    /*
-    pinMode(PA8, OUTPUT);
-    while(true){
-      digitalWrite(PA8,!digitalRead(PA8));
-      delay(1000);
-    }
-    */
+    Serial.begin(115200);
     delay(2000);
     Serial.println("Beginning!");
 
@@ -46,8 +50,8 @@ void setup() {
       Serial.println("Failed to connect!");
       while(true);
     }
-    bmp.setFilter(BMP280::Filter_16);
-    delay(50);
+    bmp.setFilter(BMP280::FILTER_16);
+    delay(500);
     baselinePressure = determineBaselinePressure();
 }
 
@@ -55,10 +59,14 @@ void loop() {
     // put your main code here, to run repeatedly:
 
     long start = micros();
-    Serial.println("Temp: " + String(bmp.getTemperature()));
-    Serial.println("Pressure: " + String(bmp.getPressure()));
-    Serial.println("Altitude: " + String(bmp.getAltitudeFromBaselinePressure(baselinePressure)));
-    Serial.println(micros() - start);
+    float pressure, temperature;
+    bmp.readSensor(&temperature, &pressure);
+    long end = micros();
+    Serial.println("Temp: " + String(temperature));
+    Serial.println("Pressure: " + String(pressure));
+    Serial.println("Altitude: " + String(estimate_altitude(pressure, baselinePressure)));
+    Serial.println("Baseline: " + String(baselinePressure));
+    Serial.println(end - start);
     delay(50);
 
 }

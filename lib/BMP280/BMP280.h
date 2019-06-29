@@ -43,45 +43,50 @@
 class BMP280{
 public:
   enum BMP180_Filter_Coefficients{
-    Filter_Off = 0x00,
-    Filter_2 = 0x01,
-    Filter_4 = 0x02,
-    Filter_8 = 0x03,
-    Filter_16 = 0x04
+   FILTER_OFF = 0x00,
+   FILTER_2 = 0x01,
+   FILTER_4 = 0x02,
+   FILTER_8 = 0x03,
+   FILTER_16 = 0x04
   };
+
   enum BMP180_Temperature_Oversampling{
-    Temperature_Oversampling_Skip = 0x00,
-    Temperature_Oversampling_1X = 0x01,
-    Temperature_Oversampling_2X = 0x02,
-    Temperature_Oversampling_4X = 0x03,
-    Temperature_Oversampling_8X = 0x04,
-    Temperature_Oversampling_16X = 0x05
+    TEMPERATURE_OVERSAMPLING_Skip = 0x00,
+    TEMPERATURE_OVERSAMPLING_1X = 0x01,
+    TEMPERATURE_OVERSAMPLING_2X = 0x02,
+    TEMPERATURE_OVERSAMPLING_4X = 0x03,
+    TEMPERATURE_OVERSAMPLING_8X = 0x04,
+    TEMPERATURE_OVERSAMPLING_16X = 0x05
   };
 
   enum BMP180_Pressure_Oversampling{
-    Pressure_Oversampling_Skip = 0x00,
-    Pressure_Oversampling_1X = 0x01,
-    Pressure_Oversampling_2X = 0x02,
-    Pressure_Oversampling_4X = 0x03,
-    Pressure_Oversampling_8X = 0x04,
-    Pressure_Oversampling_16X = 0x05,
+    PRESSURE_OVERSAMPLING_SKIP = 0x00,
+    PRESSURE_OVERSAMPLING_1X = 0x01,
+    PRESSURE_OVERSAMPLING_2X = 0x02,
+    PRESSURE_OVERSAMPLING_4X = 0x03,
+    PRESSURE_OVERSAMPLING_8X = 0x04,
+    PRESSURE_OVERSAMPLING_16X = 0x05
   };
 
-  enum BMP180_Update_Rate{
-    Update_Rate_80Hz = 80,
-    Update_Rate_50Hz = 50,
-    Update_Rate_25Hz = 25
+  enum BMP280_Standby_Time{
+    STANDBY_HALF_M_SEC = 0x00,
+    STANDBY_63_M_SEC = 0x01,
+    STANDBY_125_M_SEC = 0x02,
+    STANDBY_250_M_SEC = 0x03,
+    STANDBY_500_M_SEC = 0x04,
+    STANDBY_1000_M_SEC = 0x05,
+    STANDBY_2000_M_SEC = 0x06,
+    STANDBY_4000_M_SEC = 0x07
   };
 
-  int begin(int address = BMP180_ADDRESS_2, BMP180_Update_Rate rate = Update_Rate_50Hz, bool initWire = true);
-  float getTemperature();
-  float getPressure();
-  float getAltitudeFromBaselinePressure(float baseLinePressure);
+  int begin(int address = BMP180_ADDRESS_2, bool initWire = true);
+  int readSensor(float *temperature, float *pressure);
   int reset();
   int setTemperatureOversampling(BMP180_Temperature_Oversampling sample);
   int setPressureOversampling(BMP180_Pressure_Oversampling sample);
   int setMode();
   int setFilter(BMP180_Filter_Coefficients coefficient);
+  int setStandbyTime(BMP280_Standby_Time time);
 
 private:
   int bmpAddress;
@@ -103,10 +108,8 @@ private:
   int read8(int address);
   int write8(int address, int value);
   int write8(int address);
-  int update(bool forceUpdate = false);
   float compensateTemperature(int32_t tempReading);
   float compensatePressure(int32_t pressureReading);
-  bool checkForUpdate();
   int getCalibrationValues(BMP180_Calibration_Values *values);
   int checkID(bool shouldReset = true);
 
@@ -121,7 +124,6 @@ private:
   bool newTemperatureReported = false;
   bool newAltitudeReported = false;
   long lastUpdateMillis = 0;
-  BMP180_Update_Rate rate;
 };
 
 #endif

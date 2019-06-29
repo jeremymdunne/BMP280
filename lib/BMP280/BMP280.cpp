@@ -1,7 +1,6 @@
 #include <BMP280.h>
-int BMP280::begin(int address, BMP180_Update_Rate rate, bool initWire){
+int BMP280::begin(int address, bool initWire){
   bmpAddress = address;
-  this->rate = rate;
   if(initWire){
     Wire.begin();
     Wire.setClock(400000);
@@ -9,85 +8,44 @@ int BMP280::begin(int address, BMP180_Update_Rate rate, bool initWire){
   if(checkID(true) == 0){
     //get calibration data
     getCalibrationValues(&calibrationValues);
-    setPressureOversampling(Pressure_Oversampling_8X);
-    setTemperatureOversampling(Temperature_Oversampling_1X);
+    setPressureOversampling(PRESSURE_OVERSAMPLING_4X);
+    setTemperatureOversampling(TEMPERATURE_OVERSAMPLING_1X);
+    setStandbyTime(STANDBY_HALF_M_SEC);
     //set normal mode
     setMode();
-    //get the first set of datas
-    getPressure();
-    getTemperature();
+
     return 0;
   }
   return 1;
 }
 
-float BMP280::getTemperature(){
-  //first read the value from the register
-  //three parts,
-  int status = update();
-  if((status == 0) | (previousTemperature == 0) | (!newTemperatureReported)){
-    previousTemperature = compensateTemperature(currentTemperatureData);
-    newTemperatureReported = true;
+int BMP280::readSensor(float *temperature, float *pressure){
+  //grab all the datas
+  write8(BMP180_PRESSURE_MSB_ADDRESS);
+  Wire.requestFrom(bmpAddress, 6);
+  int32_t pressureData = 0;
+  int32_t temperatureData = 0;
+  if(Wire.available()){
+    pressureData = (int32_t)(Wire.read());
+    pressureData <<= 8;
+    pressureData |= Wire.read();
+    pressureData <<= 8;
+    pressureData |= Wire.read();
+    //shift back 4
+    pressureData >>= 4;
+    temperatureData = (int32_t)(Wire.read());
+    temperatureData <<= 8;
+    temperatureData |= Wire.read();
+    temperatureData <<= 8;
+    temperatureData |= Wire.read();
+    temperatureData >>= 4;
   }
-  return previousTemperature;
+
+  //go and do the appropriate compensations
+  *temperature = compensateTemperature(temperatureData);
+  *pressure = compensatePressure(pressureData);
+  return 0;
 }
-
-float BMP280::getPressure(){
-  //first get datas
-  int status = update();
-  if((status == 0) | (previousPressure == 0) | (!newPressureReported)){
-    previousPressure = compensatePressure(currentPressureData);
-    newPressureReported = true;
-  }
-  return previousPressure;
-}
-
-float BMP280::getAltitudeFromBaselinePressure(float baseLinePressure){
-  //update temperature
-  //then pressure
-  //then claculate
-  int status = update();
-  if((status == 0) | (!newAltitudeReported) | (previousAltitude == 0)){
-    getTemperature();
-    getPressure();
-    previousAltitude = 44330.0*(1-pow(previousPressure/baseLinePressure,1/5.255));
-    newAltitudeReported = true;
-  }
-  return previousAltitude;
-}
-
-
-  int BMP280::update(bool forceUpdate){
-    //first, decide if it is time to update
-    //Serial.println("Update Called!");
-    if(checkForUpdate() || forceUpdate){
-      //Serial.println("Updating!");
-      newPressureReported = false;
-      newTemperatureReported = false;
-      newAltitudeReported = false;
-      lastUpdateMillis = millis();
-      //grab all the datas
-      write8(BMP180_PRESSURE_MSB_ADDRESS);
-      Wire.requestFrom(bmpAddress, 6);
-      if(Wire.available()){
-        currentPressureData = (int32_t)(Wire.read());
-        currentPressureData <<= 8;
-        currentPressureData |= Wire.read();
-        currentPressureData <<= 8;
-        currentPressureData |= Wire.read();
-        //shift back 4
-        currentPressureData >>= 4;
-        currentTemperatureData = (int32_t)(Wire.read());
-        currentTemperatureData <<= 8;
-        currentTemperatureData |= Wire.read();
-        currentTemperatureData <<= 8;
-        currentTemperatureData |= Wire.read();
-        currentTemperatureData >>= 4;
-      }
-      return 0;
-    }
-    return BMP180_UPDATE_NOT_REQUIRED;
-  }
 
   float BMP280::compensateTemperature(int32_t tempReading){
     //magical formula as defined in the data sheet
@@ -117,11 +75,6 @@ float BMP280::getAltitudeFromBaselinePressure(float baseLinePressure){
     return (float)(p/256.0);
   }
 
-  bool BMP280::checkForUpdate(){
-    if(millis() - lastUpdateMillis > 1000.0/rate) return true;
-    return false;
-  }
-
   int BMP280::getCalibrationValues(BMP180_Calibration_Values *values){
     //per the data sheet, read these values in. Keep in mid their data type
     //all are 16 bit shorts
@@ -142,9 +95,6 @@ float BMP280::getAltitudeFromBaselinePressure(float baseLinePressure){
       values->dig_P7 = (int16_t)(Wire.read()|(Wire.read()<<8));
       values->dig_P8 = (int16_t)(Wire.read()|(Wire.read()<<8));
       values->dig_P9 = (int16_t)(Wire.read()|(Wire.read()<<8));
-      Serial.println(values->dig_T1);
-      Serial.println(values->dig_T2);
-      Serial.println(values->dig_T3);
       return 0;
     }
     return BMP180_CALIBRATION_DATA_READ_FAILURE;
@@ -192,6 +142,18 @@ float BMP280::getAltitudeFromBaselinePressure(float baseLinePressure){
     //currentSampling = sample;
     //send back to the BMP
     return write8(BMP180_CTRL_MEAS_ADDRESS, settings);
+  }
+
+  int BMP280::setStandbyTime(BMP280_Standby_Time time){
+    //first read the data in the register
+    int settings = read8(BMP180_CONFIG_ADDRESS);
+    //combine oversampling into the current settings
+    settings &= 0b00011111;
+    settings |= time << 5;
+    //update the currentSampling
+    //currentSampling = sample;
+    //send back to the BMP
+    return write8(BMP180_CONFIG_ADDRESS, settings);
   }
 
   int BMP280::setPressureOversampling(BMP180_Pressure_Oversampling sample){
