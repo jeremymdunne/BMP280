@@ -1,4 +1,6 @@
 #include <BMP280.h>
+
+
 int BMP280::begin(int address, bool initWire){
   bmpAddress = address;
   if(initWire){
@@ -21,7 +23,7 @@ int BMP280::begin(int address, bool initWire){
 
 int BMP280::readSensor(float *temperature, float *pressure){
   //grab all the datas
-  write8(BMP180_PRESSURE_MSB_ADDRESS);
+  write8(BMP280_PRESSURE_MSB_ADDRESS);
   Wire.requestFrom(bmpAddress, 6);
   int32_t pressureData = 0;
   int32_t temperatureData = 0;
@@ -75,10 +77,10 @@ int BMP280::readSensor(float *temperature, float *pressure){
     return (float)(p/256.0);
   }
 
-  int BMP280::getCalibrationValues(BMP180_Calibration_Values *values){
+  int BMP280::getCalibrationValues(BMP280_Calibration_Values *values){
     //per the data sheet, read these values in. Keep in mid their data type
     //all are 16 bit shorts
-    write8(BMP180_CALIBRATION_DIG_T1_ADDRESS);
+    write8(BMP280_CALIBRATION_DIG_T1_ADDRESS);
     //request all 24 adresses
     Wire.requestFrom(bmpAddress, 24);
     //read in 1 at a time
@@ -97,7 +99,7 @@ int BMP280::readSensor(float *temperature, float *pressure){
       values->dig_P9 = (int16_t)(Wire.read()|(Wire.read()<<8));
       return 0;
     }
-    return BMP180_CALIBRATION_DATA_READ_FAILURE;
+    return BMP280_CALIBRATION_DATA_READ_FAILURE;
   }
 
   int BMP280::checkID(bool shouldReset){
@@ -105,90 +107,90 @@ int BMP280::readSensor(float *temperature, float *pressure){
     if(shouldReset){
       int resetStatus = reset();
       if(resetStatus != 0){
-        return BMP180_CONNECTION_ISSUE;
+        return BMP280_CONNECTION_ISSUE;
       }
     }
     //get the address of the device
-    int resp = read8(BMP180_ID_ADDRESS);
+    int resp = read8(BMP280_ID_ADDRESS);
     //compare, if correct, return 0
     Serial.println(resp);
-    if(resp == BMP180_WHO_AM_I_RESPONSE){
+    if(resp == BMP280_WHO_AM_I_RESPONSE){
       return 0;
     }
     //return failure values as required
     if(resp == -1){
-      return BMP180_CONNECTION_ISSUE;
+      return BMP280_CONNECTION_ISSUE;
     }
     else{
-      return BMP180_BAD_WHO_AM_I_ADDRESS;
+      return BMP280_BAD_WHO_AM_I_ADDRESS;
     }
     return 1;
   }
 
   int BMP280::reset(){
     //reset, no easy way to check for alive
-    write8(bmpAddress, BMP180_RESET_WRITE_VALUE);
+    write8(bmpAddress, BMP280_RESET_WRITE_VALUE);
     delay(1);
     return 0;
   }
 
-  int BMP280::setTemperatureOversampling(BMP180_Temperature_Oversampling sample){
+  int BMP280::setTemperatureOversampling(BMP280_Temperature_Oversampling sample){
     //first read the data in the register
-    int settings = read8(BMP180_CTRL_MEAS_ADDRESS);
+    int settings = read8(BMP280_CTRL_MEAS_ADDRESS);
     //combine oversampling into the current settings
     settings &= 0b00011111;
     settings |= sample << 5;
     //update the currentSampling
     //currentSampling = sample;
     //send back to the BMP
-    return write8(BMP180_CTRL_MEAS_ADDRESS, settings);
+    return write8(BMP280_CTRL_MEAS_ADDRESS, settings);
   }
 
   int BMP280::setStandbyTime(BMP280_Standby_Time time){
     //first read the data in the register
-    int settings = read8(BMP180_CONFIG_ADDRESS);
+    int settings = read8(BMP280_CONFIG_ADDRESS);
     //combine oversampling into the current settings
     settings &= 0b00011111;
     settings |= time << 5;
     //update the currentSampling
     //currentSampling = sample;
     //send back to the BMP
-    return write8(BMP180_CONFIG_ADDRESS, settings);
+    return write8(BMP280_CONFIG_ADDRESS, settings);
   }
 
-  int BMP280::setPressureOversampling(BMP180_Pressure_Oversampling sample){
+  int BMP280::setPressureOversampling(BMP280_Pressure_Oversampling sample){
     //first read the data in the register
-    int settings = read8(BMP180_CTRL_MEAS_ADDRESS);
+    int settings = read8(BMP280_CTRL_MEAS_ADDRESS);
     //combine oversampling into the current settings
     settings &= 0b11100011;
     settings |= sample << 2;
     //update the currentSampling
     //currentSampling = sample;
     //send back to the BMP
-    return write8(BMP180_CTRL_MEAS_ADDRESS, settings);
+    return write8(BMP280_CTRL_MEAS_ADDRESS, settings);
   }
 
   int BMP280::setMode(){
     //go to normal for now
     //read the settings in the control
-    int settings = read8(BMP180_CTRL_MEAS_ADDRESS);
+    int settings = read8(BMP280_CTRL_MEAS_ADDRESS);
     settings &= 0b11111100;
     settings |= 0b00000011;
     //write settings
-    write8(BMP180_CTRL_MEAS_ADDRESS,settings);
+    write8(BMP280_CTRL_MEAS_ADDRESS,settings);
     return 0;
   }
 
-  int BMP280::setFilter(BMP180_Filter_Coefficients coefficient){
+  int BMP280::setFilter(BMP280_Filter_Coefficients coefficient){
     //first read the data in the register
-    int settings = read8(BMP180_CONFIG_ADDRESS);
+    int settings = read8(BMP280_CONFIG_ADDRESS);
     //combine oversampling into the current settings
     settings &= 0b11100011;
     settings |= coefficient << 2;
     //update the currentSampling
     //currentSampling = sample;
     //send back to the BMP
-    return write8(BMP180_CONFIG_ADDRESS, settings);
+    return write8(BMP280_CONFIG_ADDRESS, settings);
   }
 
 

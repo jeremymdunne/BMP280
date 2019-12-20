@@ -1,48 +1,58 @@
 #ifndef BMP_280_H_
 #define BMP_280_H_
+
+/*
+
+
+*/
+
 #include <Arduino.h>
 #include <Wire.h>
 
 
-#define BMP180_TEMP_XLSB_ADDRESS 0xFC
-#define BMP180_TEMP_LSB_ADDRESS 0xFB
-#define BMP180_TEMP_MSB_ADDRESS 0xFA
-#define BMP180_PRESSURE_XLSB_ADDRESS 0xF9
-#define BMP180_PRESSURE_LSB_ADDRESS 0xF8
-#define BMP180_PRESSURE_MSB_ADDRESS 0xF7
-#define BMP180_CONFIG_ADDRESS 0xF5
-#define BMP180_CTRL_MEAS_ADDRESS 0xF4
-#define BMP180_STATUS_ADDRESS 0xF3
-#define BMP180_RESET_ADDRESS 0xE0
-#define BMP180_ID_ADDRESS 0xD0
-#define BMP180_CALIBRATION_START_ADDRESS 0xA1
-#define BMP180_CALIBRATION_DIG_T1_ADDRESS 0x88
-#define BMP180_CALIBRATION_DIG_T2_ADDRESS 0x8A
-#define BMP180_CALIBRATION_DIG_T3_ADDRESS 0x8C
-#define BMP180_CALIBRATION_DIG_P1_ADDRESS 0x8E
-#define BMP180_CALIBRATION_DIG_P2_ADDRESS 0x90
-#define BMP180_CALIBRATION_DIG_P3_ADDRESS 0x92
-#define BMP180_CALIBRATION_DIG_P4_ADDRESS 0x94
-#define BMP180_CALIBRATION_DIG_P5_ADDRESS 0x96
-#define BMP180_CALIBRATION_DIG_P6_ADDRESS 0x98
-#define BMP180_CALIBRATION_DIG_P7_ADDRESS 0x9A
-#define BMP180_CALIBRATION_DIG_P8_ADDRESS 0x9C
-#define BMP180_CALIBRATION_DIG_P9_ADDRESS 0x9F
+//Register Addresses 
+
+#define BMP280_TEMP_XLSB_ADDRESS                  0xFC
+#define BMP280_TEMP_LSB_ADDRESS                   0xFB
+#define BMP280_TEMP_MSB_ADDRESS                   0xFA
+#define BMP280_PRESSURE_XLSB_ADDRESS              0xF9
+#define BMP280_PRESSURE_LSB_ADDRESS               0xF8
+#define BMP280_PRESSURE_MSB_ADDRESS               0xF7
+#define BMP280_CONFIG_ADDRESS                     0xF5
+#define BMP280_CTRL_MEAS_ADDRESS                  0xF4
+#define BMP280_STATUS_ADDRESS                     0xF3
+#define BMP280_RESET_ADDRESS                      0xE0
+#define BMP280_ID_ADDRESS                         0xD0
+#define BMP280_CALIBRATION_START_ADDRESS          0xA1
+#define BMP280_CALIBRATION_DIG_T1_ADDRESS         0x88
+#define BMP280_CALIBRATION_DIG_T2_ADDRESS         0x8A
+#define BMP280_CALIBRATION_DIG_T3_ADDRESS         0x8C
+#define BMP280_CALIBRATION_DIG_P1_ADDRESS         0x8E
+#define BMP280_CALIBRATION_DIG_P2_ADDRESS         0x90
+#define BMP280_CALIBRATION_DIG_P3_ADDRESS         0x92
+#define BMP280_CALIBRATION_DIG_P4_ADDRESS         0x94
+#define BMP280_CALIBRATION_DIG_P5_ADDRESS         0x96
+#define BMP280_CALIBRATION_DIG_P6_ADDRESS         0x98
+#define BMP280_CALIBRATION_DIG_P7_ADDRESS         0x9A
+#define BMP280_CALIBRATION_DIG_P8_ADDRESS         0x9C
+#define BMP280_CALIBRATION_DIG_P9_ADDRESS         0x9F
 
 
-#define BMP180_WHO_AM_I_RESPONSE 0x58
-#define BMP180_RESET_WRITE_VALUE 0xB6
-#define BMP180_ADDRESS_1 0x76
-#define BMP180_ADDRESS_2 0x77
-#define BMP180_CONNECTION_ISSUE 101
-#define BMP180_BAD_WHO_AM_I_ADDRESS 102
-#define BMP180_CALIBRATION_DATA_READ_FAILURE 103
-#define BMP180_UPDATE_NOT_REQUIRED 104
+#define BMP280_WHO_AM_I_RESPONSE                  0x58
+#define BMP280_RESET_WRITE_VALUE                  0xB6
+#define BMP280_ADDRESS_1                          0x76
+#define BMP280_ADDRESS_2                          0x77
+
+// errors 
+#define BMP280_CONNECTION_ISSUE                   101
+#define BMP280_BAD_WHO_AM_I_ADDRESS               102
+#define BMP280_CALIBRATION_DATA_READ_FAILURE      103
+#define BMP280_UPDATE_NOT_REQUIRED                104
 
 
 class BMP280{
 public:
-  enum BMP180_Filter_Coefficients{
+  enum BMP280_Filter_Coefficients{
    FILTER_OFF = 0x00,
    FILTER_2 = 0x01,
    FILTER_4 = 0x02,
@@ -50,7 +60,7 @@ public:
    FILTER_16 = 0x04
   };
 
-  enum BMP180_Temperature_Oversampling{
+  enum BMP280_Temperature_Oversampling{
     TEMPERATURE_OVERSAMPLING_Skip = 0x00,
     TEMPERATURE_OVERSAMPLING_1X = 0x01,
     TEMPERATURE_OVERSAMPLING_2X = 0x02,
@@ -59,7 +69,7 @@ public:
     TEMPERATURE_OVERSAMPLING_16X = 0x05
   };
 
-  enum BMP180_Pressure_Oversampling{
+  enum BMP280_Pressure_Oversampling{
     PRESSURE_OVERSAMPLING_SKIP = 0x00,
     PRESSURE_OVERSAMPLING_1X = 0x01,
     PRESSURE_OVERSAMPLING_2X = 0x02,
@@ -79,18 +89,20 @@ public:
     STANDBY_4000_M_SEC = 0x07
   };
 
-  int begin(int address = BMP180_ADDRESS_2, bool initWire = true);
+
+  
+  int begin(int address = BMP280_ADDRESS_2, bool initWire = true);
   int readSensor(float *temperature, float *pressure);
   int reset();
-  int setTemperatureOversampling(BMP180_Temperature_Oversampling sample);
-  int setPressureOversampling(BMP180_Pressure_Oversampling sample);
+  int setTemperatureOversampling(BMP280_Temperature_Oversampling sample);
+  int setPressureOversampling(BMP280_Pressure_Oversampling sample);
   int setMode();
-  int setFilter(BMP180_Filter_Coefficients coefficient);
+  int setFilter(BMP280_Filter_Coefficients coefficient);
   int setStandbyTime(BMP280_Standby_Time time);
 
 private:
   int bmpAddress;
-  struct BMP180_Calibration_Values{
+  struct BMP280_Calibration_Values{
     u_int16_t dig_T1;
     int16_t dig_T2;
     int16_t dig_T3;
@@ -110,10 +122,10 @@ private:
   int write8(int address);
   float compensateTemperature(int32_t tempReading);
   float compensatePressure(int32_t pressureReading);
-  int getCalibrationValues(BMP180_Calibration_Values *values);
+  int getCalibrationValues(BMP280_Calibration_Values *values);
   int checkID(bool shouldReset = true);
 
-  BMP180_Calibration_Values calibrationValues;
+  BMP280_Calibration_Values calibrationValues;
   int32_t t_fine;
   int32_t currentPressureData = 0;
   int32_t currentTemperatureData = 0;
